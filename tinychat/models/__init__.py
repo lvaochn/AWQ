@@ -1,5 +1,26 @@
-from .falcon import FalconForCausalLM
-from .llama import LlamaForCausalLM
-from .mpt import MPTForCausalLM
-from .llava_llama import LlavaLlamaForCausalLM
-from .qwen2 import Qwen2ForCausalLM
+# 使所有导入都变为可选，避免 flash_attn 等依赖问题
+
+try:
+    from .falcon import FalconForCausalLM
+except ImportError:
+    FalconForCausalLM = None
+
+try:
+    from .llama import LlamaForCausalLM
+except ImportError:
+    LlamaForCausalLM = None
+
+try:
+    from .mpt import MPTForCausalLM
+except ImportError:
+    MPTForCausalLM = None
+
+try:
+    from .llava_llama import LlavaLlamaForCausalLM
+except ImportError:
+    LlavaLlamaForCausalLM = None
+
+try:
+    from .qwen2 import Qwen2ForCausalLM
+except ImportError:
+    Qwen2ForCausalLM = None
