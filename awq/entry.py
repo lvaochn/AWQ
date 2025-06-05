@@ -299,7 +299,7 @@ def main():
     if args.tasks is not None:
         # https://github.com/IST-DASLab/gptq/blob/2d65066eeb06a5c9ff5184d8cebdf33662c67faf/llama.py#L206
         if args.tasks == "wikitext":
-            testenc = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+            testenc = load_dataset("wikitext", "wikitext-2-raw-v1", split="test", cache_dir="/mnt/nfs/infrawaves/wikitext/wikitext-2-raw-v1")
             testenc = enc("\n\n".join(testenc["text"]), return_tensors="pt")
             model.seqlen = 2048
             testenc = testenc.input_ids.to(model.device)
@@ -312,18 +312,19 @@ def main():
                 )
                 with torch.no_grad():
                     lm_logits = model(batch).logits
-                shift_logits = lm_logits[:, :-1, :].contiguous().float()
+                shift_logits = lm_logits[:, :-1, :].contiguous().float() #[1, 2047, vocab_size]
                 shift_labels = testenc[
                     :, (i * model.seqlen) : ((i + 1) * model.seqlen)
-                ][:, 1:]
+                ][:, 1:] #[1, 2047]
                 loss_fct = nn.CrossEntropyLoss()
                 loss = loss_fct(
-                    shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
+                    shift_logits.view(-1, shift_logits.size(-1)), # [1 * 2047, vocab_size]
+                    shift_labels.view(-1) #[1 * 2047]
                 )
                 neg_log_likelihood = loss.float() * model.seqlen
                 nlls.append(neg_log_likelihood)
 
-            ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
+            ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))    #对所有token取平均
             print(ppl.item())
 
             results = {"ppl": ppl.item()}
